@@ -1,0 +1,60 @@
+{
+  "name": "claude-code-archiver",
+  "version": "1.0.0",
+  "description": "TUI app to archive old Claude Code session conversations",
+  "license": "MIT",
+  "author": {
+    "name": "Martín M.",
+    "url": "https://github.com/skydiver/"
+  },
+  "type": "module",
+  "main": "build/bundle.js",
+  "bin": {
+    "claude-code-archiver": "./build/bundle.js"
+  },
+  "scripts": {
+    "build": "pnpm clean && tsx esbuild.config.ts && chmod +x build/bundle.js",
+    "clean": "rimraf build",
+    "dev": "tsx watch src/index.tsx",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "pnpm build",
+    "start": "tsx src/index.tsx",
+    "test": "vitest src",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "figures": "^6.1.0",
+    "ink": "6.6.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.3.11",
+    "@types/archiver": "^7.0.0",
+    "@types/node": "^25.0.6",
+    "@types/react": "^19.0.0",
+    "@vitest/coverage-v8": "4.0.17",
+    "esbuild": "^0.27.2",
+    "globals": "^17.0.0",
+    "rimraf": "^6.1.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.0",
+    "vite-tsconfig-paths": "6.0.4",
+    "vitest": "4.0.17"
+  },
+  "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "volta": {
+    "node": "22.13.1",
+    "pnpm": "10.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
