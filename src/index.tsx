@@ -1,7 +1,4 @@
-import { render, Text } from 'ink';
-
-function App() {
-  return <Text>Hello World!</Text>;
-}
+import { render } from 'ink';
+import { App } from './App';
 
 render(<App />);
