@@ -32,6 +32,8 @@ export interface Session {
   customTitle: string | undefined;
   /** Timestamp of the session (from first entry) */
   timestamp: Date | undefined;
+  /** Number of related agent files */
+  agentCount: number;
 }
 
 /**
@@ -66,6 +68,7 @@ export type Screen =
   | 'project-select'
   | 'archive-type'
   | 'session-preview'
+  | 'confirm-archive'
   | 'progress'
   | 'summary';
 

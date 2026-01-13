@@ -1,4 +1,4 @@
-import { mkdir, rename } from 'node:fs/promises';
+import { mkdir, rename, stat, readdir, readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import type { ArchiveResult, Session } from '@/types';
 
@@ -8,12 +8,17 @@ const DEV_MODE = process.env['NODE_ENV'] !== 'production';
 const ARCHIVE_FOLDER = '.archived';
 
 /**
- * Archive a single session: move to .archived folder
+ * Archive a single session: move .jsonl file, companion folder, and related agent files
  */
 export async function archiveSession(session: Session): Promise<ArchiveResult> {
   const archiveDir = join(session.projectPath, ARCHIVE_FOLDER);
   const fileName = basename(session.path);
   const archivePath = join(archiveDir, fileName);
+
+  // Companion folder has same name without .jsonl extension
+  const folderName = fileName.replace(/\.jsonl$/, '');
+  const folderPath = join(session.projectPath, folderName);
+  const archiveFolderPath = join(archiveDir, folderName);
 
   // Dev mode: skip actual archiving
   if (DEV_MODE) {
@@ -29,8 +34,16 @@ export async function archiveSession(session: Session): Promise<ArchiveResult> {
     // Ensure archive directory exists
     await mkdir(archiveDir, { recursive: true });
 
-    // Move file to archive folder
+    // Move the .jsonl file
     await rename(session.path, archivePath);
+
+    // Move companion folder if it exists
+    if (await exists(folderPath)) {
+      await rename(folderPath, archiveFolderPath);
+    }
+
+    // Move related agent files
+    await moveRelatedAgentFiles(session.id, session.projectPath, archiveDir);
 
     return {
       session,
@@ -46,6 +59,75 @@ export async function archiveSession(session: Session): Promise<ArchiveResult> {
       archivePath: undefined,
       error,
     };
+  }
+}
+
+/**
+ * Find and move agent files that belong to a session
+ */
+async function moveRelatedAgentFiles(
+  sessionId: string,
+  projectPath: string,
+  archiveDir: string
+): Promise<void> {
+  try {
+    const entries = await readdir(projectPath);
+    const agentFiles = entries.filter(
+      (e) => e.startsWith('agent-') && e.endsWith('.jsonl')
+    );
+
+    for (const agentFile of agentFiles) {
+      const agentPath = join(projectPath, agentFile);
+      const belongsToSession = await checkAgentBelongsToSession(
+        agentPath,
+        sessionId
+      );
+
+      if (belongsToSession) {
+        // Move agent .jsonl file
+        await rename(agentPath, join(archiveDir, agentFile));
+
+        // Move agent companion folder if exists
+        const agentFolderName = agentFile.replace(/\.jsonl$/, '');
+        const agentFolderPath = join(projectPath, agentFolderName);
+        if (await exists(agentFolderPath)) {
+          await rename(agentFolderPath, join(archiveDir, agentFolderName));
+        }
+      }
+    }
+  } catch {
+    // Ignore errors when moving agent files - main session is already archived
+  }
+}
+
+/**
+ * Check if an agent file belongs to a specific session
+ */
+async function checkAgentBelongsToSession(
+  agentPath: string,
+  sessionId: string
+): Promise<boolean> {
+  try {
+    const content = await readFile(agentPath, 'utf-8');
+    const firstLine = content.split('\n')[0];
+    if (!firstLine) return false;
+
+    const parsed = JSON.parse(firstLine) as Record<string, unknown>;
+    return parsed['sessionId'] === sessionId;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if a path exists
+ */
+async function exists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 

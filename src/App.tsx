@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   ArchiveTypeSelect,
+  ConfirmArchive,
   Progress,
   ProjectSelect,
   SessionPreview,
@@ -26,8 +27,12 @@ export function App() {
     setScreen('session-preview');
   }, []);
 
-  const handleSessionsConfirmed = useCallback((sessions: Session[]) => {
+  const handleSessionsSelected = useCallback((sessions: Session[]) => {
     setSessionsToArchive(sessions);
+    setScreen('confirm-archive');
+  }, []);
+
+  const handleArchiveConfirmed = useCallback(() => {
     setScreen('progress');
   }, []);
 
@@ -52,6 +57,10 @@ export function App() {
     setScreen('archive-type');
   }, []);
 
+  const handleBackToSessionPreview = useCallback(() => {
+    setScreen('session-preview');
+  }, []);
+
   switch (screen) {
     case 'project-select':
       return <ProjectSelect onSelect={handleProjectSelected} />;
@@ -72,8 +81,17 @@ export function App() {
         <SessionPreview
           project={selectedProject}
           archiveType={archiveType}
-          onConfirm={handleSessionsConfirmed}
+          onConfirm={handleSessionsSelected}
           onBack={handleBackToArchiveType}
+        />
+      );
+
+    case 'confirm-archive':
+      return (
+        <ConfirmArchive
+          sessions={sessionsToArchive}
+          onConfirm={handleArchiveConfirmed}
+          onBack={handleBackToSessionPreview}
         />
       );
 

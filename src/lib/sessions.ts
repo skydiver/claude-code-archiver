@@ -11,13 +11,18 @@ export async function getSessions(project: Project): Promise<Session[]> {
   try {
     const entries = await readdir(project.path);
 
+    // Build a map of sessionId -> agent count
+    const agentCounts = await countAgentsBySession(project.path, entries);
+
     for (const entry of entries) {
-      if (!entry.endsWith('.jsonl')) {
+      // Skip non-jsonl files and agent sidechain files
+      if (!entry.endsWith('.jsonl') || entry.startsWith('agent-')) {
         continue;
       }
 
       const sessionPath = join(project.path, entry);
-      const session = await parseSession(sessionPath, project.path);
+      const sessionId = basename(entry, '.jsonl');
+      const session = await parseSession(sessionPath, project.path, agentCounts.get(sessionId) ?? 0);
 
       if (session) {
         sessions.push(session);
@@ -33,6 +38,45 @@ export async function getSessions(project: Project): Promise<Session[]> {
     if (!b.timestamp) return -1;
     return b.timestamp.getTime() - a.timestamp.getTime();
   });
+}
+
+/**
+ * Count agent files per session
+ */
+async function countAgentsBySession(
+  projectPath: string,
+  entries: string[]
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const agentFiles = entries.filter(
+    (e) => e.startsWith('agent-') && e.endsWith('.jsonl')
+  );
+
+  for (const agentFile of agentFiles) {
+    const agentPath = join(projectPath, agentFile);
+    const sessionId = await getAgentSessionId(agentPath);
+    if (sessionId) {
+      counts.set(sessionId, (counts.get(sessionId) ?? 0) + 1);
+    }
+  }
+
+  return counts;
+}
+
+/**
+ * Get the sessionId from an agent file
+ */
+async function getAgentSessionId(agentPath: string): Promise<string | undefined> {
+  try {
+    const content = await readFile(agentPath, 'utf-8');
+    const firstLine = content.split('\n')[0];
+    if (!firstLine) return undefined;
+
+    const parsed = JSON.parse(firstLine) as Record<string, unknown>;
+    return typeof parsed['sessionId'] === 'string' ? parsed['sessionId'] : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -56,7 +100,8 @@ export async function getSessionsFromProjects(
  */
 async function parseSession(
   sessionPath: string,
-  projectPath: string
+  projectPath: string,
+  agentCount: number
 ): Promise<Session | undefined> {
   try {
     const content = await readFile(sessionPath, 'utf-8');
@@ -108,6 +153,7 @@ async function parseSession(
       hasCustomTitle,
       customTitle,
       timestamp,
+      agentCount,
     };
   } catch {
     return undefined;

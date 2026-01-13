@@ -16,6 +16,7 @@ interface SessionPreviewProps {
 interface SessionRow {
   id: string;
   summary: string;
+  agents: string;
   size: string;
 }
 
@@ -50,7 +51,8 @@ export function SessionPreview({
 
   const columns: Column<SessionRow>[] = [
     { key: 'id', header: 'Session ID', width: 12 },
-    { key: 'summary', header: 'Summary', width: 30 },
+    { key: 'summary', header: 'Summary', width: 24 },
+    { key: 'agents', header: 'Agents', width: 6, align: 'right' },
     { key: 'size', header: 'Size', width: 10, align: 'right' },
   ];
 
@@ -61,7 +63,8 @@ export function SessionPreview({
 
   const data: SessionRow[] = sessions.map((session) => ({
     id: truncateId(session.id),
-    summary: session.summary ? truncate(session.summary, 28) : '(no summary)',
+    summary: session.summary ? truncate(session.summary, 22) : '(no summary)',
+    agents: session.agentCount > 0 ? String(session.agentCount) : '-',
     size: formatSize(session.size),
   }));
 
