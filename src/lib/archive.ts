@@ -1,7 +1,5 @@
-import { createWriteStream } from 'node:fs';
-import { mkdir, unlink } from 'node:fs/promises';
+import { mkdir, rename } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import archiver from 'archiver';
 import type { ArchiveResult, Session } from '@/types';
 
 export type { ArchiveResult };
@@ -10,17 +8,15 @@ const DEV_MODE = process.env['NODE_ENV'] !== 'production';
 const ARCHIVE_FOLDER = '.archived';
 
 /**
- * Archive a single session: create zip, then delete original
+ * Archive a single session: move to .archived folder
  */
 export async function archiveSession(session: Session): Promise<ArchiveResult> {
   const archiveDir = join(session.projectPath, ARCHIVE_FOLDER);
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const zipName = `${session.id}_${timestamp}.zip`;
-  const archivePath = join(archiveDir, zipName);
+  const fileName = basename(session.path);
+  const archivePath = join(archiveDir, fileName);
 
   // Dev mode: skip actual archiving
   if (DEV_MODE) {
-    console.log(`[DEV] Would archive: ${session.id}`);
     return {
       session,
       success: true,
@@ -33,11 +29,8 @@ export async function archiveSession(session: Session): Promise<ArchiveResult> {
     // Ensure archive directory exists
     await mkdir(archiveDir, { recursive: true });
 
-    // Create zip archive
-    await createZip(session.path, archivePath);
-
-    // Delete original file
-    await unlink(session.path);
+    // Move file to archive folder
+    await rename(session.path, archivePath);
 
     return {
       session,
@@ -76,23 +69,6 @@ export async function archiveSessions(
   }
 
   return results;
-}
-
-/**
- * Create a zip file containing the session file
- */
-function createZip(sourcePath: string, destPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const output = createWriteStream(destPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
-
-    output.on('close', () => resolve());
-    archive.on('error', (err) => reject(err));
-
-    archive.pipe(output);
-    archive.file(sourcePath, { name: basename(sourcePath) });
-    archive.finalize();
-  });
 }
 
 /**

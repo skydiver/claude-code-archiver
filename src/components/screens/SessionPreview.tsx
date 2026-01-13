@@ -54,6 +54,11 @@ export function SessionPreview({
     { key: 'size', header: 'Size', width: 10, align: 'right' },
   ];
 
+  // Calculate table width: sum of column widths + 2-char gaps between columns
+  const tableWidth = columns.reduce((sum, col, i) => {
+    return sum + (col.width ?? 20) + (i < columns.length - 1 ? 2 : 0);
+  }, 0);
+
   const data: SessionRow[] = sessions.map((session) => ({
     id: truncateId(session.id),
     summary: session.summary ? truncate(session.summary, 28) : '(no summary)',
@@ -92,7 +97,7 @@ export function SessionPreview({
   return (
     <Layout
       title="Session Preview"
-      subtitle={`${sessions.length} session${sessions.length !== 1 ? 's' : ''} to archive`}
+      subtitle={`${sessions.length} unnamed session${sessions.length !== 1 ? 's' : ''} to archive`}
       footerActions={footerActions}
     >
       <Box flexDirection="column">
@@ -103,12 +108,15 @@ export function SessionPreview({
             </Text>
           </Box>
         )}
-        <Box marginBottom={1}>
+        <Table columns={columns} data={data} maxRows={15} />
+        <Box marginTop={1}>
+          <Text color="gray">{'─'.repeat(tableWidth)}</Text>
+        </Box>
+        <Box>
           <Text color="gray">
             Total size: {formatSize(getTotalSize(sessions))}
           </Text>
         </Box>
-        <Table columns={columns} data={data} maxRows={15} />
       </Box>
     </Layout>
   );
