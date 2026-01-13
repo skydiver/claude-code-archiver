@@ -5,7 +5,7 @@ interface HeaderProps {
   subtitle?: string;
 }
 
-const WIDTH = 52;
+const WIDTH = 72;
 
 export function Header({ title = 'Claude Code Archiver', subtitle }: HeaderProps) {
   const innerWidth = WIDTH - 2; // Account for side borders

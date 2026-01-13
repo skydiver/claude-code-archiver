@@ -68,7 +68,6 @@ export type Screen =
   | 'project-select'
   | 'archive-type'
   | 'session-preview'
-  | 'confirm-archive'
   | 'progress'
   | 'summary';
 

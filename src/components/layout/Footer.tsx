@@ -17,7 +17,7 @@ export function Footer({ actions = DEFAULT_ACTIONS }: FooterProps) {
   return (
     <Box flexDirection="column" marginTop={1}>
       <Box>
-        <Text color="gray">{'─'.repeat(50)}</Text>
+        <Text color="gray">{'─'.repeat(72)}</Text>
       </Box>
       <Box gap={2}>
         {actions.map((action, index) => (
