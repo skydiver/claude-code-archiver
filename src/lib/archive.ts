@@ -1,10 +1,10 @@
 import { mkdir, rename, stat, readdir, readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import type { ArchiveResult, Session } from '@/types';
+import { isReadOnly, getRunMode } from './config';
 
 export type { ArchiveResult };
 
-const DEV_MODE = process.env['NODE_ENV'] !== 'production';
 const ARCHIVE_FOLDER = '.archived';
 
 /**
@@ -20,12 +20,13 @@ export async function archiveSession(session: Session): Promise<ArchiveResult> {
   const folderPath = join(session.projectPath, folderName);
   const archiveFolderPath = join(archiveDir, folderName);
 
-  // Dev mode: skip actual archiving
-  if (DEV_MODE) {
+  // Read-only modes: skip actual archiving
+  if (isReadOnly()) {
+    const prefix = getRunMode() === 'dev' ? '[DEV]' : '[DRY-RUN]';
     return {
       session,
       success: true,
-      archivePath: `[DEV] ${archivePath}`,
+      archivePath: `${prefix} ${archivePath}`,
       error: undefined,
     };
   }
@@ -175,9 +176,5 @@ export function getArchiveSummary(results: ArchiveResult[]): {
   };
 }
 
-/**
- * Check if we're in dev mode (destructive operations disabled)
- */
-export function isDevMode(): boolean {
-  return DEV_MODE;
-}
+// Re-export config utilities for components
+export { isReadOnly, getRunMode, getModeInfo } from './config';

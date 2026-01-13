@@ -4,7 +4,6 @@ import { Layout } from '../layout';
 import { Spinner } from '../ui';
 import { getSessions, filterSessions, formatSize, truncate } from '@/lib/sessions';
 import { getFilesToArchive, type ArchiveFileSet } from '@/lib/files';
-import { isDevMode } from '@/lib/archive';
 import type { ArchiveType, Project, Session } from '@/types';
 import figures from 'figures';
 
@@ -137,14 +136,6 @@ export function SessionPreview({
       footerActions={footerActions}
     >
       <Box flexDirection="column">
-        {isDevMode() && (
-          <Box marginBottom={1}>
-            <Text color="yellow" bold>
-              ⚠ DEV MODE - Destructive operations disabled
-            </Text>
-          </Box>
-        )}
-
         <Box flexDirection="column" marginBottom={1}>
           <Text color="gray">
             Files will be moved to <Text color="white">.archived/</Text> folder

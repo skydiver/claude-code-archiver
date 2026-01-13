@@ -1,6 +1,6 @@
 import { Box, Text, useInput } from 'ink';
 import { Layout } from '../layout';
-import { getArchiveSummary, isDevMode, type ArchiveResult } from '@/lib/archive';
+import { getArchiveSummary, type ArchiveResult } from '@/lib/archive';
 import { formatSize, truncateId } from '@/lib/sessions';
 import figures from 'figures';
 
@@ -30,7 +30,6 @@ export function Summary({ results, onRestart }: SummaryProps) {
   return (
     <Layout
       title="Archive Complete"
-      {...(isDevMode() ? { subtitle: 'DEV MODE - No files were modified' } : {})}
       footerActions={footerActions}
     >
       <Box flexDirection="column">
@@ -66,14 +65,6 @@ export function Summary({ results, onRestart }: SummaryProps) {
           </Box>
         )}
 
-        {/* Dev mode reminder */}
-        {isDevMode() && (
-          <Box marginTop={1}>
-            <Text color="yellow">
-              {figures.warning} Run with NODE_ENV=production to actually archive files
-            </Text>
-          </Box>
-        )}
       </Box>
     </Layout>
   );

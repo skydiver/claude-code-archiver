@@ -15,12 +15,12 @@
   "scripts": {
     "build": "pnpm clean && tsx esbuild.config.ts && chmod +x build/bundle.js",
     "clean": "rimraf build",
-    "dev": "tsx watch src/index.tsx",
+    "dev": "tsx watch src/index.tsx --dev",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "prepare": "pnpm build",
-    "start": "tsx src/index.tsx",
+    "start": "tsx src/index.tsx --dev",
     "test": "vitest src",
     "test:coverage": "vitest run --coverage"
   },

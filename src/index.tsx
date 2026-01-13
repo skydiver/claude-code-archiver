@@ -1,5 +1,14 @@
 import { render } from 'ink';
 import { App } from './App';
+import { setRunMode } from './lib/config';
+
+// Parse CLI arguments
+const args = process.argv.slice(2);
+if (args.includes('--dry-run')) {
+  setRunMode('dry-run');
+} else if (args.includes('--dev')) {
+  setRunMode('dev');
+}
 
 // ANSI escape codes for alternate screen buffer
 const ENTER_ALT_SCREEN = '\x1b[?1049h';
