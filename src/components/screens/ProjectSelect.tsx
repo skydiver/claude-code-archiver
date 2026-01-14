@@ -2,35 +2,69 @@ import { Box, Text } from 'ink';
 import { useEffect, useState } from 'react';
 import { Layout } from '../layout';
 import { OptionList, Spinner, type OptionItem } from '../ui';
-import { getProjects, projectsDirExists } from '@/lib/projects';
+import { getProjects, type ProjectsErrorType } from '@/lib/projects';
 import type { Project } from '@/types';
+import figures from 'figures';
 
 interface ProjectSelectProps {
   onSelect: (project: Project) => void;
 }
 
+interface ErrorInfo {
+  type: ProjectsErrorType;
+  message: string;
+  hint: string;
+}
+
+function getErrorInfo(type: ProjectsErrorType, message: string | null): ErrorInfo {
+  switch (type) {
+    case 'not-found':
+      return {
+        type,
+        message: message ?? 'Claude projects folder not found',
+        hint: 'Make sure Claude Code has been used at least once',
+      };
+    case 'permission':
+      return {
+        type,
+        message: message ?? 'Permission denied',
+        hint: 'Check read permissions on ~/.claude/projects',
+      };
+    default:
+      return {
+        type,
+        message: message ?? 'Unknown error',
+        hint: 'Try running again or check the folder manually',
+      };
+  }
+}
+
 export function ProjectSelect({ onSelect }: ProjectSelectProps) {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
 
   useEffect(() => {
     async function load() {
-      const exists = await projectsDirExists();
-      if (!exists) {
-        setError('Claude projects directory not found (~/.claude/projects)');
+      const result = await getProjects();
+
+      if (result.error) {
+        setError(getErrorInfo(result.error, result.errorMessage));
         setLoading(false);
         return;
       }
 
-      const loadedProjects = await getProjects();
-      if (loadedProjects.length === 0) {
-        setError('No projects found with session files');
+      if (result.projects.length === 0) {
+        setError({
+          type: null,
+          message: 'No projects found with session files',
+          hint: 'Archive sessions after using Claude Code in some projects',
+        });
         setLoading(false);
         return;
       }
 
-      setProjects(loadedProjects);
+      setProjects(result.projects);
       setLoading(false);
     }
 
@@ -65,9 +99,23 @@ export function ProjectSelect({ onSelect }: ProjectSelectProps) {
   }
 
   if (error) {
+    const icon = error.type === 'permission' ? figures.warning : figures.cross;
+    const color = error.type === 'permission' ? 'yellow' : 'red';
+
     return (
       <Layout title="Claude Code Archiver" footerActions={[{ key: 'Esc', label: 'Quit' }]}>
-        <Text color="red">{error}</Text>
+        <Box flexDirection="column">
+          <Box>
+            <Text color={color}>
+              {icon} {error.message}
+            </Text>
+          </Box>
+          <Box marginTop={1}>
+            <Text color="gray" dimColor>
+              {figures.arrowRight} {error.hint}
+            </Text>
+          </Box>
+        </Box>
       </Layout>
     );
   }

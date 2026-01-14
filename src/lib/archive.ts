@@ -1,11 +1,36 @@
 import { mkdir, rename, stat, readdir, readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import type { ArchiveResult, Session } from '@/types';
+import type { ArchiveErrorType, ArchiveResult, Session } from '@/types';
 import { isReadOnly, getRunMode } from './config';
 
 export type { ArchiveResult };
 
 const ARCHIVE_FOLDER = '.archived';
+
+/**
+ * Classify an error into a user-friendly type
+ */
+function classifyError(err: unknown): { type: ArchiveErrorType; message: string } {
+  if (!(err instanceof Error)) {
+    return { type: 'unknown', message: 'Unknown error' };
+  }
+
+  const code = (err as NodeJS.ErrnoException).code;
+
+  switch (code) {
+    case 'EACCES':
+    case 'EPERM':
+      return { type: 'permission', message: 'Permission denied' };
+    case 'ENOENT':
+      return { type: 'not-found', message: 'File not found' };
+    case 'EEXIST':
+      return { type: 'already-exists', message: 'Already archived' };
+    case 'ENOSPC':
+      return { type: 'disk-full', message: 'Disk full' };
+    default:
+      return { type: 'unknown', message: err.message };
+  }
+}
 
 /**
  * Archive a single session: move .jsonl file, companion folder, and related agent files
@@ -28,10 +53,22 @@ export async function archiveSession(session: Session): Promise<ArchiveResult> {
       success: true,
       archivePath: `${prefix} ${archivePath}`,
       error: undefined,
+      errorType: undefined,
     };
   }
 
   try {
+    // Check if already archived (prevent overwrite)
+    if (await exists(archivePath)) {
+      return {
+        session,
+        success: false,
+        archivePath: undefined,
+        error: 'Already archived',
+        errorType: 'already-exists',
+      };
+    }
+
     // Ensure archive directory exists
     await mkdir(archiveDir, { recursive: true });
 
@@ -51,14 +88,16 @@ export async function archiveSession(session: Session): Promise<ArchiveResult> {
       success: true,
       archivePath,
       error: undefined,
+      errorType: undefined,
     };
   } catch (err) {
-    const error = err instanceof Error ? err.message : 'Unknown error';
+    const { type, message } = classifyError(err);
     return {
       session,
       success: false,
       archivePath: undefined,
-      error,
+      error: message,
+      errorType: type,
     };
   }
 }

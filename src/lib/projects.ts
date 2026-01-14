@@ -6,9 +6,44 @@ import type { Project } from '@/types';
 const CLAUDE_PROJECTS_DIR = join(homedir(), '.claude', 'projects');
 
 /**
+ * Error types for project discovery
+ */
+export type ProjectsErrorType = 'not-found' | 'permission' | 'unknown' | null;
+
+/**
+ * Result of project discovery
+ */
+export interface ProjectsResult {
+  projects: Project[];
+  error: ProjectsErrorType;
+  errorMessage: string | null;
+}
+
+/**
+ * Classify filesystem errors
+ */
+function classifyError(err: unknown): { type: ProjectsErrorType; message: string } {
+  if (!(err instanceof Error)) {
+    return { type: 'unknown', message: 'Unknown error' };
+  }
+
+  const code = (err as NodeJS.ErrnoException).code;
+
+  switch (code) {
+    case 'ENOENT':
+      return { type: 'not-found', message: 'Claude projects folder not found' };
+    case 'EACCES':
+    case 'EPERM':
+      return { type: 'permission', message: 'Permission denied reading projects folder' };
+    default:
+      return { type: 'unknown', message: err.message };
+  }
+}
+
+/**
  * Get all Claude Code projects from ~/.claude/projects
  */
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(): Promise<ProjectsResult> {
   const projects: Project[] = [];
 
   try {
@@ -37,13 +72,14 @@ export async function getProjects(): Promise<Project[]> {
         sessionCount,
       });
     }
-  } catch {
-    // Directory doesn't exist or can't be read
-    return [];
+  } catch (err) {
+    const { type, message } = classifyError(err);
+    return { projects: [], error: type, errorMessage: message };
   }
 
   // Sort by readable path
-  return projects.sort((a, b) => a.readablePath.localeCompare(b.readablePath));
+  const sorted = projects.sort((a, b) => a.readablePath.localeCompare(b.readablePath));
+  return { projects: sorted, error: null, errorMessage: null };
 }
 
 /**

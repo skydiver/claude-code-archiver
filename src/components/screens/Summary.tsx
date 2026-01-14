@@ -2,11 +2,30 @@ import { Box, Text, useInput } from 'ink';
 import { Layout } from '../layout';
 import { getArchiveSummary, type ArchiveResult } from '@/lib/archive';
 import { formatSize, truncateId } from '@/lib/sessions';
+import type { ArchiveErrorType } from '@/types';
 import figures from 'figures';
 
 interface SummaryProps {
   results: ArchiveResult[];
   onRestart: () => void;
+}
+
+/**
+ * Get display info for an error type
+ */
+function getErrorDisplay(errorType: ArchiveErrorType | undefined): { icon: string; color: string } {
+  switch (errorType) {
+    case 'permission':
+      return { icon: figures.warning, color: 'yellow' };
+    case 'already-exists':
+      return { icon: figures.info, color: 'cyan' };
+    case 'disk-full':
+      return { icon: figures.warning, color: 'red' };
+    case 'not-found':
+      return { icon: figures.cross, color: 'gray' };
+    default:
+      return { icon: figures.cross, color: 'red' };
+  }
 }
 
 export function Summary({ results, onRestart }: SummaryProps) {
@@ -55,13 +74,17 @@ export function Summary({ results, onRestart }: SummaryProps) {
         {failed.length > 0 && (
           <Box flexDirection="column" marginTop={1}>
             <Text color="red" bold>Failed sessions:</Text>
-            {failed.map((result, index) => (
-              <Box key={index}>
-                <Text color="red">{figures.cross} </Text>
-                <Text>{truncateId(result.session.id)}</Text>
-                <Text color="gray" dimColor> - {result.error}</Text>
-              </Box>
-            ))}
+            {failed.map((result, index) => {
+              const { icon, color } = getErrorDisplay(result.errorType);
+              return (
+                <Box key={index}>
+                  <Text color={color}>{icon} </Text>
+                  <Text>{truncateId(result.session.id)}</Text>
+                  <Text color="gray"> — </Text>
+                  <Text color={color}>{result.error}</Text>
+                </Box>
+              );
+            })}
           </Box>
         )}
 

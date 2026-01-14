@@ -52,6 +52,16 @@ export interface ArchiveTypeOption {
 }
 
 /**
+ * Error types for better user feedback
+ */
+export type ArchiveErrorType =
+  | 'permission'    // EACCES - No permission to read/write
+  | 'not-found'     // ENOENT - File/directory doesn't exist
+  | 'already-exists'// EEXIST - File already in .archived/
+  | 'disk-full'     // ENOSPC - No space left on device
+  | 'unknown';      // Other errors
+
+/**
  * Result of archiving a single session
  */
 export interface ArchiveResult {
@@ -59,6 +69,7 @@ export interface ArchiveResult {
   success: boolean;
   archivePath: string | undefined;
   error: string | undefined;
+  errorType: ArchiveErrorType | undefined;
 }
 
 /**

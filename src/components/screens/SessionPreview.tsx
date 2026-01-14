@@ -14,6 +14,11 @@ interface SessionPreviewProps {
   onBack: () => void;
 }
 
+interface ErrorInfo {
+  message: string;
+  hint: string;
+}
+
 export function SessionPreview({
   project,
   archiveType,
@@ -21,6 +26,7 @@ export function SessionPreview({
   onBack,
 }: SessionPreviewProps) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<ErrorInfo | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [fileSets, setFileSets] = useState<ArchiveFileSet[]>([]);
   const [cursor, setCursor] = useState(0);
@@ -29,15 +35,23 @@ export function SessionPreview({
 
   useEffect(() => {
     async function load() {
-      const allSessions = await getSessions(project);
-      const filteredSessions = filterSessions(allSessions, archiveType);
-      setSessions(filteredSessions);
+      try {
+        const allSessions = await getSessions(project);
+        const filteredSessions = filterSessions(allSessions, archiveType);
+        setSessions(filteredSessions);
 
-      // Get file details for each session
-      const sets = await getFilesToArchive(filteredSessions);
-      setFileSets(sets);
-
-      setLoading(false);
+        // Get file details for each session
+        const sets = await getFilesToArchive(filteredSessions);
+        setFileSets(sets);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load sessions';
+        setError({
+          message,
+          hint: 'Try selecting a different project or check folder permissions',
+        });
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [project, archiveType]);
@@ -115,6 +129,29 @@ export function SessionPreview({
     );
   }
 
+  if (error) {
+    return (
+      <Layout
+        title="Session Preview"
+        subtitle="Error loading sessions"
+        footerActions={[{ key: 'Esc', label: 'Back' }]}
+      >
+        <Box flexDirection="column">
+          <Box>
+            <Text color="red">
+              {figures.cross} {error.message}
+            </Text>
+          </Box>
+          <Box marginTop={1}>
+            <Text color="gray" dimColor>
+              {figures.arrowRight} {error.hint}
+            </Text>
+          </Box>
+        </Box>
+      </Layout>
+    );
+  }
+
   if (sessions.length === 0) {
     return (
       <Layout
@@ -157,10 +194,10 @@ export function SessionPreview({
         {/* Table header */}
         <Box>
           <Text color="gray">{'   '}</Text>
-          <Text color="gray" bold>{'Session ID'.padEnd(12)}</Text>
-          <Text color="gray" bold>{'Summary'.padEnd(36)}</Text>
+          <Text color="gray" bold>{'Session ID'.padEnd(11)}</Text>
+          <Text color="gray" bold>{'Summary'.padEnd(40)}</Text>
           <Text color="gray" bold>{'Files'.padEnd(8)}</Text>
-          <Text color="gray" bold>{'Size'}</Text>
+          <Text color="gray" bold>{'Size'.padStart(10)}</Text>
         </Box>
         <Box marginBottom={0}>
           <Text color="gray">{'─'.repeat(72)}</Text>
@@ -171,7 +208,7 @@ export function SessionPreview({
           const session = sessions[index];
           const isCursor = index === cursor;
           const isExpanded = expandedIndex === index;
-          const summaryText = session?.summary ? truncate(session.summary, 34) : '—';
+          const summaryText = session?.summary ? truncate(session.summary, 38) : '—';
           const filesText = `${fileSet.files.length} file${fileSet.files.length !== 1 ? 's' : ''}`;
 
           return (
@@ -185,16 +222,16 @@ export function SessionPreview({
                   {isExpanded ? figures.arrowDown : figures.arrowRight}
                 </Text>
                 <Text color={isCursor ? 'green' : 'white'} bold={isCursor}>
-                  {fileSet.sessionId.slice(0, 10).padEnd(12)}
+                  {fileSet.sessionId.slice(0, 9).padEnd(11)}
                 </Text>
                 <Text color={isCursor ? 'green' : 'white'}>
-                  {summaryText.padEnd(36)}
+                  {summaryText.padEnd(40)}
                 </Text>
                 <Text color="yellow">
                   {filesText.padEnd(8)}
                 </Text>
                 <Text color="yellow">
-                  {formatSize(fileSet.totalSize)}
+                  {formatSize(fileSet.totalSize).padStart(10)}
                 </Text>
               </Box>
 
