@@ -165,11 +165,20 @@ async function parseSession(
  */
 export function filterSessions(
   sessions: Session[],
-  archiveType: ArchiveType
+  archiveType: ArchiveType,
+  titlePattern?: string
 ): Session[] {
   switch (archiveType) {
     case 'unnamed':
       return sessions.filter((s) => !s.hasCustomTitle);
+
+    case 'by-title':
+      if (!titlePattern) return [];
+      const pattern = titlePattern.toLowerCase();
+      return sessions.filter((s) => {
+        if (!s.hasCustomTitle || !s.customTitle) return false;
+        return s.customTitle.toLowerCase().includes(pattern);
+      });
 
     case 'older-than':
       // TODO: Implement age-based filtering

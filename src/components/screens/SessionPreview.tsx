@@ -10,6 +10,7 @@ import figures from 'figures';
 interface SessionPreviewProps {
   project: Project;
   archiveType: ArchiveType;
+  titlePattern?: string;
   onConfirm: (sessions: Session[]) => void;
   onBack: () => void;
 }
@@ -22,6 +23,7 @@ interface ErrorInfo {
 export function SessionPreview({
   project,
   archiveType,
+  titlePattern,
   onConfirm,
   onBack,
 }: SessionPreviewProps) {
@@ -37,7 +39,7 @@ export function SessionPreview({
     async function load() {
       try {
         const allSessions = await getSessions(project);
-        const filteredSessions = filterSessions(allSessions, archiveType);
+        const filteredSessions = filterSessions(allSessions, archiveType, titlePattern);
         setSessions(filteredSessions);
 
         // Get file details for each session
@@ -166,10 +168,15 @@ export function SessionPreview({
     );
   }
 
+  // Build subtitle based on archive type
+  const subtitleText = archiveType === 'by-title'
+    ? `${sessions.length} session${sessions.length !== 1 ? 's' : ''} matching "${titlePattern}" (${totalFiles} files, ${formatSize(totalSize)})`
+    : `${sessions.length} unnamed session${sessions.length !== 1 ? 's' : ''} (${totalFiles} files, ${formatSize(totalSize)}) to archive`;
+
   return (
     <Layout
       title="Session Preview"
-      subtitle={`${sessions.length} unnamed session${sessions.length !== 1 ? 's' : ''} (${totalFiles} files, ${formatSize(totalSize)}) to archive`}
+      subtitle={subtitleText}
       footerActions={footerActions}
     >
       <Box flexDirection="column">
@@ -195,7 +202,7 @@ export function SessionPreview({
         <Box>
           <Text color="gray">{'   '}</Text>
           <Text color="gray" bold>{'Session ID'.padEnd(11)}</Text>
-          <Text color="gray" bold>{'Summary'.padEnd(40)}</Text>
+          <Text color="gray" bold>{(archiveType === 'by-title' ? 'Title' : 'Summary').padEnd(40)}</Text>
           <Text color="gray" bold>{'Files'.padEnd(8)}</Text>
           <Text color="gray" bold>{'Size'.padStart(10)}</Text>
         </Box>
@@ -208,7 +215,9 @@ export function SessionPreview({
           const session = sessions[index];
           const isCursor = index === cursor;
           const isExpanded = expandedIndex === index;
-          const summaryText = session?.summary ? truncate(session.summary, 38) : '—';
+          const displayText = archiveType === 'by-title'
+            ? (session?.customTitle ? truncate(session.customTitle, 38) : '—')
+            : (session?.summary ? truncate(session.summary, 38) : '—');
           const filesText = `${fileSet.files.length} file${fileSet.files.length !== 1 ? 's' : ''}`;
 
           return (
@@ -225,7 +234,7 @@ export function SessionPreview({
                   {fileSet.sessionId.slice(0, 9).padEnd(11)}
                 </Text>
                 <Text color={isCursor ? 'green' : 'white'}>
-                  {summaryText.padEnd(40)}
+                  {displayText.padEnd(40)}
                 </Text>
                 <Text color="yellow">
                   {filesText.padEnd(8)}

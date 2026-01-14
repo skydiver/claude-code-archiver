@@ -21,6 +21,11 @@ export function ArchiveTypeSelect({
       hint: '(sessions without a custom title)',
     },
     {
+      label: 'Search by title',
+      value: 'by-title',
+      hint: '(match sessions by custom title)',
+    },
+    {
       label: 'Older than N days',
       value: 'older-than',
       hint: '(coming soon)',

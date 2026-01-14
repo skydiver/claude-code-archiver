@@ -14,12 +14,12 @@ A terminal app to clean up old Claude Code conversations and free up disk space.
 
 Claude Code Archiver helps you:
 
-- **Find** conversations that haven't been named (unnamed = probably not important)
-- **Preview** what will be archived before taking action
-- **Archive** old sessions by compressing them to `.zip` files
-- **Free up space** while keeping a backup just in case
+- **Find** conversations by criteria (unnamed, by title pattern, etc.)
+- **Preview** exactly what will be archived with expandable file details
+- **Archive** sessions by moving them to a `.archived/` folder
+- **Restore easily** — just move files back if needed
 
-Named conversations (ones you've given a custom title) are **never touched** — they're clearly important to you.
+Named conversations are **never touched** unless you explicitly search for them by title.
 
 ---
 
@@ -31,7 +31,7 @@ Run directly without installing:
 npx github:skydiver/claude-code-archiver
 ```
 
-Or with preview mode (no changes made):
+Preview mode (no files moved):
 
 ```bash
 npx github:skydiver/claude-code-archiver --dry-run
@@ -41,57 +41,76 @@ npx github:skydiver/claude-code-archiver --dry-run
 
 ## How It Works
 
-1. **Select projects** — Choose which Claude Code projects to scan
-2. **Pick archive criteria** — Currently: "unnamed sessions" (more options coming)
-3. **Review sessions** — See what will be archived with file sizes
-4. **Confirm** — Archives are created in each project's `.archived/` folder
-5. **Done** — Original files are removed, zips remain as backup
+1. **Select a project** — Choose which Claude Code project to scan
+2. **Pick archive criteria** — Unnamed sessions or search by title
+3. **Review sessions** — Expandable preview shows all files to be moved
+4. **Confirm** — Double-press Enter to archive
+5. **Done** — Files moved to `.archived/` folder for easy restore
 
 ---
 
 ## Features
 
-- **Interactive TUI** — Navigate with arrow keys, no commands to memorize
-- **Safe by default** — Preview everything before archiving
-- **Non-destructive** — Creates zip backups before deleting originals
-- **Selective** — Only targets unnamed sessions; named ones stay untouched
-- **Fast** — Built with modern tooling for quick startup
-
----
-
-## Screenshots
-
-*Coming soon*
-
----
-
-## Requirements
-
-- Node.js 22 or later
-- Claude Code installed (with existing conversations)
+- **Interactive TUI** — Navigate with arrow keys, type to filter
+- **Safe by default** — Preview everything, double-Enter to confirm
+- **Non-destructive** — Files are moved, not deleted
+- **Search by title** — Find sessions by custom title pattern (e.g., "TO_DELETE")
+- **Comprehensive** — Archives session files, companion folders, and agent sidechains
 
 ---
 
 ## Archive Types
 
-| Type | Description | Status |
-|------|-------------|--------|
-| Unnamed sessions | Conversations without a custom title | Available |
-| Older than N days | Archive by age | Planned |
-| By size | Archive large/small sessions | Planned |
+| Type              | Description                          | Status    |
+| ----------------- | ------------------------------------ | --------- |
+| Unnamed sessions  | Conversations without a custom title | Available |
+| Search by title   | Match sessions by title pattern      | Available |
+| Older than N days | Archive by age                       | Planned   |
+| By size           | Archive large/small sessions         | Planned   |
+
+---
+
+## CLI Flags
+
+| Flag        | Description                            |
+| ----------- | -------------------------------------- |
+| `--dry-run` | Preview mode — no files will be moved  |
+| `--dev`     | Development mode — for testing the app |
+
+---
+
+## What Gets Archived
+
+For each session, the archiver moves:
+
+1. **Session file** — `{session-id}.jsonl`
+2. **Companion folder** — `{session-id}/` (attachments, if exists)
+3. **Agent files** — `agent-*.jsonl` files linked to the session
+
+All files go to `.archived/` within the project folder.
 
 ---
 
 ## FAQ
 
 **Will this delete my important conversations?**
-No. Only unnamed sessions are archived. If you've given a conversation a title, it's safe.
+No. Files are moved to `.archived/`, not deleted. Named sessions are only touched if you explicitly search for them by title.
 
 **Can I restore archived sessions?**
-Yes. Archives are stored as `.zip` files in `.archived/` within each project folder. Unzip to restore.
+Yes. Just move files from `.archived/` back to the parent folder.
 
 **Where does Claude Code store conversations?**
 In `~/.claude/projects/`. Each project has its own folder with `.jsonl` session files.
+
+**What are agent files?**
+Sidechain conversations (like background tasks) that Claude Code creates. They're linked to a parent session and archived together.
+
+---
+
+## Requirements
+
+- Node.js 22+
+- Claude Code installed (with existing conversations)
 
 ---
 

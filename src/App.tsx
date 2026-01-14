@@ -5,6 +5,7 @@ import {
   ProjectSelect,
   SessionPreview,
   Summary,
+  TitleInput,
 } from './components/screens';
 import type { ArchiveResult } from './lib/archive';
 import type { ArchiveType, Project, Screen, Session } from './types';
@@ -13,6 +14,7 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('project-select');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [archiveType, setArchiveType] = useState<ArchiveType>('unnamed');
+  const [titlePattern, setTitlePattern] = useState<string>('');
   const [sessionsToArchive, setSessionsToArchive] = useState<Session[]>([]);
   const [archiveResults, setArchiveResults] = useState<ArchiveResult[]>([]);
 
@@ -23,6 +25,15 @@ export function App() {
 
   const handleArchiveTypeSelected = useCallback((type: ArchiveType) => {
     setArchiveType(type);
+    if (type === 'by-title') {
+      setScreen('title-input');
+    } else {
+      setScreen('session-preview');
+    }
+  }, []);
+
+  const handleTitlePatternSubmit = useCallback((pattern: string) => {
+    setTitlePattern(pattern);
     setScreen('session-preview');
   }, []);
 
@@ -66,14 +77,25 @@ export function App() {
         />
       );
 
+    case 'title-input':
+      if (!selectedProject) return <ProjectSelect onSelect={handleProjectSelected} />;
+      return (
+        <TitleInput
+          project={selectedProject}
+          onSubmit={handleTitlePatternSubmit}
+          onBack={handleBackToArchiveType}
+        />
+      );
+
     case 'session-preview':
       if (!selectedProject) return <ProjectSelect onSelect={handleProjectSelected} />;
       return (
         <SessionPreview
           project={selectedProject}
           archiveType={archiveType}
+          titlePattern={titlePattern}
           onConfirm={handleSessionsConfirmed}
-          onBack={handleBackToArchiveType}
+          onBack={archiveType === 'by-title' ? () => setScreen('title-input') : handleBackToArchiveType}
         />
       );
 

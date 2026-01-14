@@ -39,7 +39,7 @@ export interface Session {
 /**
  * Archive type criteria
  */
-export type ArchiveType = 'unnamed' | 'older-than' | 'by-size';
+export type ArchiveType = 'unnamed' | 'by-title' | 'older-than' | 'by-size';
 
 /**
  * Archive type option for selection
@@ -78,6 +78,7 @@ export interface ArchiveResult {
 export type Screen =
   | 'project-select'
   | 'archive-type'
+  | 'title-input'
   | 'session-preview'
   | 'progress'
   | 'summary';
