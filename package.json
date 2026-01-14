@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "description": "TUI app to archive old Claude Code session conversations",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/skydiver/claude-code-archiver.git"
+  },
+  "homepage": "https://github.com/skydiver/claude-code-archiver#readme",
+  "bugs": {
+    "url": "https://github.com/skydiver/claude-code-archiver/issues"
+  },
   "author": {
     "name": "Martín M.",
     "url": "https://github.com/skydiver/"

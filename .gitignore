@@ -5,7 +5,7 @@ node_modules/
 /coverage/
 
 # production
-/build/
+# /build/ - committed for npx github:user/repo to work
 
 # environment
 .env
